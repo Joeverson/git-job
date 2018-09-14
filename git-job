@@ -1,0 +1,46 @@
+#!/bin/bash
+
+task_id=$1
+title=$2
+
+# pequeno help de comandos
+help() {
+  echo -e "\n @@ Script para facilitar a criação e atuallização de novas Branchs @@\n"
+  echo -e "\n Exemplo:"
+  echo -e "\n- Criando uma nova branch atualizada com as ultimas coisas da branche de desenvolvimento"
+  echo -e "\n\t$ git-job [branch] [task_id] [title-of-the-task]"
+  echo -e "\n- Abrindo o Help"
+  echo -e "\n\t$ git-job --help"
+}
+
+# extraindo o repositorio do git remoto
+extractPathGitRemote() {
+  gitPath=`git remote -v | grep -oP '[a-z-|_]*\.git' | cut -d$'\n' -f 1 | cut -d'.' -f 1`
+  echo $gitPath
+}
+
+whoBranch() {
+  case $(extractPathGitRemote) in
+    scm-node) echo "develop" ;;
+    scm-vue) echo "development" ;;
+  esac
+}
+
+# fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
+doGitFlow() {  
+  git checkout $1 && git pull origin $1 &&  git checkout -b "$2-$3"
+}
+
+main() {
+  if [ -z $1 ];
+  then
+    echo 'Você precisa passar algum parâmetro, saiba mais com o comando: "git-job --help"'
+  else
+    case $1 in
+      --help) help ;;
+      *) doGitFlow $(whoBranch) $task_id $title ;;
+    esac
+  fi
+}
+
+main $1
