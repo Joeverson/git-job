@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# imports
-. OpenProjectConnect.sh
-
 task_id=$1
 
 # constant onde fica as informações de logs e de timer
@@ -18,6 +15,35 @@ help() {
   echo -e "\n\t$ git-job --help"
   echo -e "\n- Finalizando o timer da task"
   echo -e "\n\t$ git-job --stop"
+}
+
+# carregando variaveis de configurações
+loadFileConfig() {
+  list=$(awk '/=/ {print $1}' ~/Documents/dup/git-job/credentials.op.conf)
+
+  # My input source is the contents of a variable called $list #
+  while IFS= read -r pkg
+  do
+    VALUE=${pkg#*=}
+    # printf 'Installing php package %s...\n' "${pkg%=$VALUE} $VALUE"
+    eval "${pkg%=$VALUE}"="$VALUE"
+    # /usr/bin/apt-get -qq install $pkg
+  done <<< "$list"
+}
+
+# conectando a api do open project e pegando o nome da task
+getNameTaskOpenProject() {
+  TASK_NAME=$(curl -u apikey:$TOKEN http://$SERVER_OP/api/v3/work_packages/$1 | jq '.subject' )
+  
+  # formatando o nome para apresentar
+  TASK_NAME=${TASK_NAME//  / }
+  TASK_NAME=${TASK_NAME//\\/}
+  TASK_NAME=${TASK_NAME//\"/}
+  TASK_NAME=${TASK_NAME//\'/}
+  TASK_NAME=${TASK_NAME//\`/}
+  TASK_NAME=${TASK_NAME//[/}
+  TASK_NAME=${TASK_NAME//]/}
+  TASK_NAME=${TASK_NAME// /-}  
 }
 
 # timer counter for init the job
@@ -44,7 +70,7 @@ cleanfile() {
 
 # fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
 doGitFlow() {
-  git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b "$task_id_$TASK_NAME"
+  git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME
 }
 
 main() {
