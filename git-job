@@ -1,7 +1,12 @@
 #!/bin/bash
 
+# imports
+. OpenProjectConnect.sh
+
 task_id=$1
-title=$2
+
+# constant onde fica as informações de logs e de timer
+FILE_NAME_SETTINGS='~/git-job.txt.log'
 
 # pequeno help de comandos
 help() {
@@ -11,24 +16,35 @@ help() {
   echo -e "\n\t$ git-job [branch] [task_id] [title-of-the-task]"
   echo -e "\n- Abrindo o Help"
   echo -e "\n\t$ git-job --help"
+  echo -e "\n- Finalizando o timer da task"
+  echo -e "\n\t$ git-job --stop"
 }
 
-# extraindo o repositorio do git remoto
-extractPathGitRemote() {
-  gitPath=`git remote -v | grep -oP '[a-z-|_]*\.git' | cut -d$'\n' -f 1 | cut -d'.' -f 1`
-  echo $gitPath
-}
-
-whoBranch() {
-  case $(extractPathGitRemote) in
-    scm-node) echo "develop" ;;
-    scm-vue) echo "development" ;;
+# timer counter for init the job
+timer() {
+  case $1 in
+    stop) saveSettings "start-time:$(date '+%Y-%m-%d %H:%M:%S')" ;;
+    start)
+      cleanfile
+      saveSettings "start-time:$(date '+%Y-%m-%d %H:%M:%S')" ;;
   esac
 }
 
+# escrevendo no arquivo de configuraçaõ
+saveSettings() {
+  `echo $1 >> ~/git-job.txt.log`
+}
+# limpando o arquivo de datas
+cleanfile() {
+  if [ -w $FILE_NAME_SETTINGS ];
+  then
+    rm $FILE_NAME_SETTINGS
+  fi
+}
+
 # fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
-doGitFlow() {  
-  git checkout $1 && git pull origin $1 &&  git checkout -b "$2-$3"
+doGitFlow() {
+  git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b "$task_id_$TASK_NAME"
 }
 
 main() {
@@ -38,9 +54,15 @@ main() {
   else
     case $1 in
       --help) help ;;
-      *) doGitFlow $(whoBranch) $task_id $title ;;
+      --stop) timer 'stop' ;;
+      *) 
+        getNameTaskOpenProject $task_id
+        doGitFlow ;;
     esac
   fi
 }
 
+# INICIALIZAÇÂO
+
+loadFileConfig
 main $1
