@@ -10,7 +10,7 @@ help() {
   echo -e "\n @@ Script para facilitar a criação e atuallização de novas Branchs @@\n"
   echo -e "\n Exemplo:"
   echo -e "\n- Criando uma nova branch atualizada com as ultimas coisas da branche de desenvolvimento"
-  echo -e "\n\t$ git-job [branch] [task_id] [title-of-the-task]"
+  echo -e "\n\t$ git-job [task_id] [branch-master-development]"
   echo -e "\n- Abrindo o Help"
   echo -e "\n\t$ git-job --help"
   echo -e "\n- Finalizando o timer da task"
@@ -91,4 +91,10 @@ main() {
 # INICIALIZAÇÂO
 
 loadFileConfig
+
+if [ -n $2 ];
+then
+  BRANCH_UPLEVEL=$2
+fi
+
 main $1
