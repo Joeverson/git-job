@@ -1,0 +1,187 @@
+#!/bin/bash
+
+task_id=$1
+
+# variables timer
+s=00
+m=00
+h=00
+tecla=""
+
+# constant onde fica as informações de logs e de timer
+FILE_NAME_SETTINGS='~/avia.txt.log'
+
+# pequeno help de comandos
+help() {
+  echo -e "\n @@ Script para facilitar a criação e atuallização de novas Branchs @@\n"
+  echo -e "\n Exemplo:"
+  echo -e "\n- Criando uma nova branch atualizada com as ultimas coisas da branch de desenvolvimento"
+  echo -e "\n\t$ avia [task_id] [branch-master-development]"
+  echo -e "\n- Listar todas as tasks vinculadas a você"
+  echo -e "\n\t$ avia --list"
+  echo -e "\n- Abrindo o Help"
+  echo -e "\n\t$ avia --help"
+  echo -e "\n- Finalizando o timer da task"
+  echo -e "\n\t$ avia --stop"
+}
+
+# carregando variaveis de configurações
+loadFileConfig() {
+  list=$(awk '/=/ {print $1}' ~/Documents/dup/git-job/credentials.op.conf)
+
+  # My input source is the contents of a variable called $list #
+  while IFS= read -r pkg
+  do
+    VALUE=${pkg#*=}
+    # printf 'Installing php package %s...\n' "${pkg%=$VALUE} $VALUE"
+    eval "${pkg%=$VALUE}"="$VALUE"
+    # /usr/bin/apt-get -qq install $pkg
+  done <<< "$list"
+}
+
+# conectando a api do open project e pegando o nome da task
+getNameTaskOpenProject() {
+  TASK_NAME=$(curl --trace trace.txt -u apikey:$TOKEN http://$SERVER_OP/api/v3/work_packages/$1 | jq '.subject' )
+  
+  # formatando o nome para apresentar
+  TASK_NAME=${TASK_NAME//  / }
+  TASK_NAME=${TASK_NAME//\\/}
+  TASK_NAME=${TASK_NAME//\"/}
+  TASK_NAME=${TASK_NAME//\'/}
+  TASK_NAME=${TASK_NAME//\./}
+  TASK_NAME=${TASK_NAME//\`/}
+  TASK_NAME=${TASK_NAME//[/}
+  TASK_NAME=${TASK_NAME//]/}
+  TASK_NAME=${TASK_NAME// /-}  
+}
+
+# escrevendo no arquivo de configuraçaõ
+saveSettings() {
+  `echo $1 >> ~/git-job.txt.log`
+}
+
+# limpando o arquivo de datas
+cleanfile() {
+  if [ -w $FILE_NAME_SETTINGS ];
+  then
+    rm $FILE_NAME_SETTINGS
+  fi
+}
+
+# conectando a api do open project e pegando o nome da task
+_finish() {
+  timer="0H"
+
+  [ $h -lt 00 ] && timer=$h+"H"
+  [ $m -lt 00 ] && timer=$m+"M"
+
+  result = $(curl --header "Content-Type: application/json" --request POST -u apikey:$TOKEN --data "{\"_links\": {\"workPackage\": {\"href\": \"/api/v3/work_packages/$task_id\"}},\"hours\": \"PT$timer\",\"spentOn\": \"$(date '+%Y-%m-%d')\"}" http://$SERVER_OP/api/v3/time_entries/)
+  echo "done"
+  break
+}
+
+# fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
+doGitFlow() {
+  git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME
+}
+
+# ------------------------------
+#
+# TIMER
+#
+# ------------------------------
+
+# DISPLAY TIMER
+
+function _screenTimer() {
+  clear
+  echo "
+                      / \\   \\    / |   / \\
+                     / - \\   \\  /  |  / - \\
+                    /     \\   \\/   | /     \\
+                ----------------------------------
+                          
+                          [ Work timer ]        "
+  printf "                            %02dh:%02dm:%02ds         " $h $m $s
+  echo -e "\n
+                ----------------------------------"
+  echo ":: 'd' for done task, 'c' for continue and 'p' para pause ::"
+}
+
+function _clock() {
+  _screenTimer
+  sleep 1
+  s=$((s+1))  
+  [ $s -eq 60 ] && m=$((m+1)) && s=00
+  [ $m -eq 60 ] && h=$((h+1)) && m=00
+}
+
+function _pausar() {
+  while :
+  do
+      _screenTimer
+      sleep 1
+      read tecla
+      [ "$tecla" = "c" ] && clear && break
+  done
+}
+
+_timer() {
+  # Poe o terminal em modo especial de interpretacao de caracteres
+  stty -echo -icanon min 0
+
+  while :
+  do
+      [ "$tecla" = "d" ] && _finish && break && clear
+      [ "$tecla" = "p" ] && _pausar
+      _clock
+      read tecla
+  done
+
+  # Restaura o modo padrao
+  stty sane
+
+  exit 0
+}
+
+
+# ------------------------------
+#
+#   MAIN
+#
+# ------------------------------
+
+main() {
+  if [ -z $1 ];
+  then
+    echo 'You need give some parameter, about more know: "avia --help"'
+  else
+    case $1 in
+      --help) help ;;
+      --list) help ;;
+      --stop) timer 'stop' ;;       
+      *) 
+        # caso não seja um inteiro(code open project tasks) ele fala comando invalido
+        if [[ "$1" =~ [0-9]+ ]];
+        then
+          getNameTaskOpenProject $task_id
+          doGitFlow
+          _timer
+        else
+          echo 'Invalid command, about more know: "avia --help"'
+        fi;;
+    esac
+  fi
+}
+
+# INICIALIZAÇÂO
+
+# loadFileConfig
+
+if [ -n $2 ];
+then
+  BRANCH_UPLEVEL=$2
+fi
+
+main $1
+
