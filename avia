@@ -7,6 +7,7 @@ s=00
 m=00
 h=00
 tecla=""
+commit=""
 
 # constant onde fica as informações de logs e de timer
 FILE_NAME_SETTINGS='~/avia.txt.log'
@@ -25,23 +26,9 @@ help() {
   echo -e "\n\t$ avia --stop"
 }
 
-# carregando variaveis de configurações
-loadFileConfig() {
-  list=$(awk '/=/ {print $1}' ~/Documents/dup/git-job/credentials.op.conf)
-
-  # My input source is the contents of a variable called $list #
-  while IFS= read -r pkg
-  do
-    VALUE=${pkg#*=}
-    # printf 'Installing php package %s...\n' "${pkg%=$VALUE} $VALUE"
-    eval "${pkg%=$VALUE}"="$VALUE"
-    # /usr/bin/apt-get -qq install $pkg
-  done <<< "$list"
-}
-
 # conectando a api do open project e pegando o nome da task
 getNameTaskOpenProject() {
-  TASK_NAME=$(curl --trace trace.txt -u apikey:$TOKEN http://$SERVER_OP/api/v3/work_packages/$1 | jq '.subject' )
+  TASK_NAME=$(curl -u apikey:$TOKEN http://$SERVER_OP/api/v3/work_packages/$1 | jq '.subject' )
   
   # formatando o nome para apresentar
   TASK_NAME=${TASK_NAME//  / }
@@ -70,14 +57,24 @@ cleanfile() {
 
 # conectando a api do open project e pegando o nome da task
 _finish() {
-  timer="0H"
-
-  [ $h -lt 00 ] && timer=$h+"H"
-  [ $m -lt 00 ] && timer=$m+"M"
-
-  result = $(curl --header "Content-Type: application/json" --request POST -u apikey:$TOKEN --data "{\"_links\": {\"workPackage\": {\"href\": \"/api/v3/work_packages/$task_id\"}},\"hours\": \"PT$timer\",\"spentOn\": \"$(date '+%Y-%m-%d')\"}" http://$SERVER_OP/api/v3/time_entries/)
+  [ $h -gt 00 ] && timer=$h$(bc <<< "scale=2; $m/60")"H"
+  [ $m -gt 00 ] && [ $h -eq 00 ] && timer=$m$(bc <<< "scale=2; $s/60")"M"
+  [ $s -gt 00 ] && [ $m -eq 00 ] && timer="0"$(bc <<< "scale=2; $s/60")"M"
+  
+  set -e
+  echo ": wirte you commit"
+  read commit
+  
+  # if [[ -n $commit ]];
+  # then
+  # git push origin $task_id"_"$TASK_NAME
+  
+  result=$(curl --header "Content-Type: application/json" --request POST -u apikey:$TOKEN --data "{\"_links\": {\"workPackage\": {\"href\": \"/api/v3/work_packages/$task_id\"}},\"hours\": \"PT$timer\",\"spentOn\": \"$(date '+%Y-%m-%d')\"}" http://$SERVER_OP/api/v3/time_entries/)
+  git commit -am "create the task $TASK_NAME" && git push origin $task_id"_"$TASK_NAME &&  git checkout $BRANCH_UPLEVEL
+  # echo $result
   echo "done"
   break
+  # fi
 }
 
 # fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
