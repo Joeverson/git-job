@@ -12,11 +12,15 @@ The script for easy create and update new branches with base the main branch.
 - [jq](https://stedolan.github.io/jq/download/)
 - [curl](https://curl.haxx.se)
 
-## Install
+## Install Linux
 
 
 copy 'avia' the script in your directory '/bin', above open the terminal(shell) and
 call for ```$ avia```, done!
+
+## Install Window
+
+[see tutorial prepare bash](https://www.techtudo.com.br/dicas-e-tutoriais/noticia/2016/04/como-instalar-e-usar-o-shell-bash-do-linux-no-windows-10.html)
 
 ### Copy the envoriments
 
