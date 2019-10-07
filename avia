@@ -79,7 +79,7 @@ _finish() {
 
 # fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
 doGitFlow() {
-  git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME
+  $(git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME)
 }
 
 # ------------------------------
@@ -181,4 +181,3 @@ then
 fi
 
 main $1
-
