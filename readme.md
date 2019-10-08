@@ -18,7 +18,7 @@ The script for easy create and update new branches with base the main branch.
 copy 'avia' the script in your directory '/bin', above open the terminal(shell) and
 call for ```$ avia```, done!
 
-## Install Window
+## Install Windows
 
 [install choco](https://chocolatey.org/install)
 
@@ -34,7 +34,7 @@ export SERVER_OP=<ip-open-project>
 export PROJECT_ID=<id-project>
 ```
 
-##### Window
+##### Windows
 
 Open Environment Variable and add the settings below.
 ```
@@ -44,6 +44,19 @@ SERVER_OP=<ip-open-project>
 PROJECT_ID=<id-project>
 ```
 
+## Runner
+
+##### Linux
+
+Copy the application for ./bin or choose one local, after call the command in terminal into in your project with git:
+
+```avia <task> <branch-choose>```
+
+##### Windows
+
+Choose any local, after call the command in terminal into in your project with git:
+
+```./avia.sh <task> <branch-choose>```
 ## commands
 
 For more informations
