@@ -20,15 +20,28 @@ call for ```$ avia```, done!
 
 ## Install Window
 
-[see tutorial prepare bash](https://www.techtudo.com.br/dicas-e-tutoriais/noticia/2016/04/como-instalar-e-usar-o-shell-bash-do-linux-no-windows-10.html)
+[install choco](https://chocolatey.org/install)
+
+`choco install jq`
 
 ### Copy the envoriments
 
+##### Linux
 ```
 export TOKEN=<token-open-project>
 export BRANCH_UPLEVEL=<branch-default-development>
 export SERVER_OP=<ip-open-project>
 export PROJECT_ID=<id-project>
+```
+
+##### Window
+
+Open Environment Variable and add the settings below.
+```
+TOKEN=<token-open-project>
+BRANCH_UPLEVEL=<branch-default-development>
+SERVER_OP=<ip-open-project>
+PROJECT_ID=<id-project>
 ```
 
 ## commands
