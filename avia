@@ -28,6 +28,7 @@ help() {
 
 # conectando a api do open project e pegando o nome da task
 getNameTaskOpenProject() {
+  
   TASK_NAME=$(curl -u apikey:$TOKEN http://$SERVER_OP/api/v3/work_packages/$1 | jq '.subject' )
   
   # formatando o nome para apresentar
@@ -39,7 +40,7 @@ getNameTaskOpenProject() {
   TASK_NAME=${TASK_NAME//\`/}
   TASK_NAME=${TASK_NAME//[/}
   TASK_NAME=${TASK_NAME//]/}
-  TASK_NAME=${TASK_NAME// /-}  
+  TASK_NAME=${TASK_NAME// /-}
 }
 
 # escrevendo no arquivo de configuraçaõ
@@ -62,8 +63,8 @@ _finish() {
   [ $s -gt 00 ] && [ $m -eq 00 ] && timer="0"$(bc <<< "scale=2; $s/60")"M"
   
   set -e
-  echo ": wirte you commit"
-  read commit
+  # echo ": wirte you commit"
+  # read commit
   
   # if [[ -n $commit ]];
   # then
@@ -98,11 +99,13 @@ function _screenTimer() {
                     /     \\   \\/   | /     \\
                 ----------------------------------
                           
-                          [ Work timer ]        "
+                          [ Work timer ]
+                          $TASK_NAME        "
   printf "                            %02dh:%02dm:%02ds         " $h $m $s
   echo -e "\n
                 ----------------------------------"
   echo ":: 'd' for done task, 'c' for continue and 'p' para pause ::"
+  
 }
 
 function _clock() {
@@ -162,8 +165,15 @@ main() {
         if [[ "$1" =~ [0-9]+ ]];
         then
           getNameTaskOpenProject $task_id
-          doGitFlow
-          _timer
+          echo $TASK_NAME
+
+          if [[ ! "$TASK_NAME" == "null" ]]
+          then
+            doGitFlow
+            _timer
+          else
+            echo 'Fail connect the server Open Project, see the settings;'  
+          fi
         else
           echo 'Invalid command, about more know: "avia --help"'
         fi;;
@@ -181,3 +191,4 @@ then
 fi
 
 main $1
+
