@@ -46,14 +46,12 @@ func main() {
 				GetNameTaskOpenProject()
 
 				if TaskName != "" {
-					var branch string
-
-					if args[2] != "" {
+					if len(args) > 2 {
 						branchUpLevel = args[2]
 					}
 
 					DoGitFlow()
-					timer(true)
+					// timer(true)
 				} else {
 					fmt.Println("Fail connect the server Open Project, see the settings")
 				}
@@ -73,7 +71,7 @@ func main() {
 
 // pequeno help de comandos
 func help() {
-	fmt.Println("\n @@ Script para facilitar a criação e atuallização de novas Branchs @@\n")
+	fmt.Println("\n @@ Script para facilitar a criação e atuallização de novas Branchs @@")
 	fmt.Println("\n Exemplo:")
 	fmt.Println("\n- Criando uma nova branch atualizada com as ultimas coisas da branch de desenvolvimento")
 	fmt.Println("\n\t$ avia [task_id] [branch-master-development]")
@@ -182,14 +180,17 @@ func timer(stopClock bool) {
 
 // DoGitFlow fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
 func DoGitFlow() {
-	cmd := exec.Command("git", "checkout", branchUpLevel, "&&", "git", "pull", "origin", branchUpLevel, "&&", "git", "checkout", "-b", TaskName)
-	err := cmd.Start()
+	cmd := exec.Command("bash", "bash.sh", branchUpLevel, TaskName)
+	defer cmd.Wait()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("cmd.Run() failed with %s\n", err)
 	}
-	log.Printf("Waiting for command to finish...")
-	err = cmd.Wait()
-	log.Printf("Command finished with error: %v", err)
+
+	// fmt.Println(string(cmd))
 	//   $(git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME)
 }
 
@@ -202,7 +203,7 @@ func DoGitFlow() {
 // GetNameTaskOpenProject conectando a api do open project e pegando o nome da task
 func GetNameTaskOpenProject() {
 	result := GetJSON("/api/v3/work_packages/" + IDTask)
-	TaskName = IDTask + "_" + strings.ReplaceAll(result["subject"].(string), " ", "-")
+	TaskName = IDTask + "-" + strings.ReplaceAll(result["subject"].(string), " ", "-")
 }
 
 // # ------------------------------
