@@ -52,7 +52,7 @@ func main() {
 						branchUpLevel = args[2]
 					}
 
-					DoGitFlow(branch)
+					DoGitFlow()
 					timer(true)
 				} else {
 					fmt.Println("Fail connect the server Open Project, see the settings")
@@ -180,8 +180,8 @@ func timer(stopClock bool) {
 // #
 // # ------------------------------
 
-// fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
-func DoGitFlow(branch string) {
+// DoGitFlow fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
+func DoGitFlow() {
 	cmd := exec.Command("git", "checkout", branchUpLevel, "&&", "git", "pull", "origin", branchUpLevel, "&&", "git", "checkout", "-b", TaskName)
 	err := cmd.Start()
 	if err != nil {
