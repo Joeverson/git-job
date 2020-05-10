@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -16,12 +19,14 @@ import (
 
 // Project is struct ri data default about project
 var (
-	TaskName      = ""
-	IDTask        = ""
+	TaskName      = getDataCache("TaskName")
+	IDTask        = getDataCache("IDTask")
 	IDProject, _  = strconv.Atoi(os.Getenv("PROJECT_ID"))
 	branchUpLevel = os.Getenv("BRANCH_UPLEVEL")
 	baseAPI       = os.Getenv("SERVER_OP")
 	token         = os.Getenv("TOKEN")
+	initTime, _   = time.Parse("20060102150405", getDataCache("initTime"))
+	endTime, _    = time.Parse("20060102150405", getDataCache("endTime"))
 )
 
 func main() {
@@ -31,19 +36,27 @@ func main() {
 		fmt.Println("You need give some parameter, about more know: 'avia --help'")
 	} else {
 		switch command := args[1]; command {
-		case "--help":
+		case "--help", "h":
 			help()
-		case "--list":
-			help()
-		case "--stop":
+		case "--list", "l":
+			fmt.Println("TODO - this feature")
+		case "--resume", "r":
+			timer(true)
+		case "--pause", "p":
+			SaveTimeTask()
+		case "--stop", "s":
 			timer(false)
+		case "--time", "t":
+			seeTimer()
 		default:
 			_, err := strconv.ParseInt(command, 10, 0)
 
-			// caso não seja um inteiro(code open project tasks) ele fala comando invalido
+			// test if is a number
 			if err == nil {
 				IDTask = args[1]
-				GetNameTaskOpenProject()
+				setDataCache("IDTask", args[1])
+
+				GetNameTaskOpenProject() // get name task in open project
 
 				if TaskName != "" {
 					if len(args) > 2 {
@@ -51,7 +64,8 @@ func main() {
 					}
 
 					DoGitFlow()
-					// timer(true)
+					banner()    // show banner when start the work
+					timer(true) // start time
 				} else {
 					fmt.Println("Fail connect the server Open Project, see the settings")
 				}
@@ -71,106 +85,76 @@ func main() {
 
 // pequeno help de comandos
 func help() {
-	fmt.Println("\n @@ Script para facilitar a criação e atuallização de novas Branchs @@")
-	fmt.Println("\n Exemplo:")
-	fmt.Println("\n- Criando uma nova branch atualizada com as ultimas coisas da branch de desenvolvimento")
-	fmt.Println("\n\t$ avia [task_id] [branch-master-development]")
-	fmt.Println("\n- Listar todas as tasks vinculadas a você")
-	fmt.Println("\n\t$ avia --list")
-	fmt.Println("\n- Abrindo o Help")
-	fmt.Println("\n\t$ avia --help")
-	fmt.Println("\n- Finalizando o timer da task")
-	fmt.Println("\n\t$ avia --stop")
+	fmt.Println("@@ Script para facilitar a criação e atuallização de novas Branchs @@")
+	fmt.Println("Exemplo:")
+	fmt.Println("- Criando uma nova branch atualizada com as ultimas coisas da branch de desenvolvimento")
+	fmt.Println("\t$ avia <task_id> [branch-master-development]")
+	fmt.Println("- Listar todas as tasks vinculadas a você")
+	fmt.Println("\t$ avia --list ou l")
+	fmt.Println("- Abrindo o Help")
+	fmt.Println("\t$ avia --help ou h")
+	fmt.Println("- Pausando o timer da task")
+	fmt.Println("\t$ avia --pause ou p")
+	fmt.Println("- Retomando a atividade depois de pausar")
+	fmt.Println("\t$ avia --resume ou r")
+	fmt.Println("- Finalizando o timer da task")
+	fmt.Println("\t$ avia --stop ou s")
 }
 
 // # ------------------------------
 // #
-// # TIMER
+// # UI
 // #
 // # ------------------------------
+func banner() {
+	fmt.Printf(`
+                      / \\   \\    / |   / \\
+                     / - \\   \\  /  |  / - \\
+                    /     \\   \\/   | /     \\
+                ----------------------------------
 
-// # DISPLAY TIMER
+                          [ Work timer ]
+            %s        
+                        
+                ----------------------------------
+  	:: avia --help to more info::
+  `, TaskName)
+}
 
-// func screenTimer() {
-//   CallClear()
-//   string display = `
-//                       / \\   \\    / |   / \\
-//                      / - \\   \\  /  |  / - \\
-//                     /     \\   \\/   | /     \\
-//                 ----------------------------------
-
-//                           [ Work timer ]
-//                           $TASK_NAME        "
-//   printf "                            02dh:02dm:02ds         " $h $m $s
-//   echo -e "\n
-//                 ----------------------------------"
-//   echo ":: 'd' for done task, 'c' for continue and 'p' para pause ::"
-//   `
-
-//   fmt.Println(display)
-// }
-
-// func CallClear() {
-//     value, ok := clear[runtime.GOOS] //runtime.GOOS -> linux, windows, darwin etc.
-//     if ok { //if we defined a clear func for that platform:
-//         value()  //we execute it
-//     } else { //unsupported platform
-//         panic("Your platform is unsupported! I can't clear terminal screen :(")
-//     }
-// }
-
-// func clock() {
-//   _screenTimer
-//   sleep 1
-//   s=$((s+1))
-//   [ $s -eq 60 ] && m=$((m+1)) && s=00
-//   [ $m -eq 60 ] && h=$((h+1)) && m=00
-// }
-
-// function _pausar() {
-//   while :
-//   do
-//       _screenTimer
-//       sleep 1
-//       read tecla
-//       [ "$tecla" = "c" ] && clear && break
-//   done
-// }
-
+// # ------------------------------
+// #
+// # Timer control
+// #
+// # ------------------------------
 func timer(stopClock bool) {
-	// Poe o terminal em modo especial de interpretacao de caracteres
-
-	timer1 := time.NewTimer(2 * time.Second)
-
-	<-timer1.C
-	fmt.Println("Timer 1 fired")
-
-	timer2 := time.NewTimer(time.Second)
-	go func() {
-		<-timer2.C
-		fmt.Println("Timer 2 fired")
-	}()
-	stop2 := timer2.Stop()
-	if stop2 {
-		fmt.Println("Timer 2 stopped")
+	if stopClock {
+		initTime = time.Now()
+		setDataCache("initTime", time.Now().Format("20060102150405"))
+	} else {
+		SaveTimeTask()
 	}
-
-	time.Sleep(2 * time.Second)
 }
 
-//   while :
-//   do
-//       [ "$tecla" = "d" ] && _finish && break && clear
-//       [ "$tecla" = "p" ] && _pausar
-//       _clock
-//       read tecla
-//   done
+// CalcTimer calculando o tempo decorrido
+func calcTimer() (hs float64, ms float64, ss float64) {
+	t1 := initTime
+	t2, _ := time.Parse("20060102150405", time.Now().Format("20060102150405"))
+	var mf, sf float64
 
-//   # Restaura o modo padrao
-//   stty sane
+	hs = t1.Sub(t2).Hours() * -1
+	ms = mf * 60
 
-//   exit 0
-// }
+	ms, sf = math.Modf(ms)
+	ss = sf * 60
+
+	return
+}
+
+// seeTimer to see timer decorred
+func seeTimer() {
+	hs, ms, ss := calcTimer()
+	fmt.Printf("Current time is: %.2fh %.2fm %.2fs", hs, ms, ss)
+}
 
 // # ------------------------------
 // #
@@ -180,18 +164,20 @@ func timer(stopClock bool) {
 
 // DoGitFlow fazendo o fluxo do git para alterar a branch baixar as coisas e atualizar
 func DoGitFlow() {
-	cmd := exec.Command("bash", "bash.sh", branchUpLevel, TaskName)
+	vars := make(map[string]interface{})
+	vars["BranchUpLevel"] = branchUpLevel
+	vars["TaskName"] = TaskName
+
+	cmd := exec.Command("bash", "-c", processString("git checkout {{.BranchUpLevel}} && git pull origin {{.BranchUpLevel}} &&  git checkout -b {{.TaskName}}", vars))
+	cmd.Env = strings.Split(os.Getenv("PATH"), ":")
 	defer cmd.Wait()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 
 	if err != nil {
-		log.Fatalf("cmd.Run() failed with %s\n", err)
+		log.Fatalf("Failed with %s\n", err)
 	}
-
-	// fmt.Println(string(cmd))
-	//   $(git checkout $BRANCH_UPLEVEL && git pull origin $BRANCH_UPLEVEL &&  git checkout -b $task_id"_"$TASK_NAME)
 }
 
 // # ------------------------------
@@ -202,8 +188,41 @@ func DoGitFlow() {
 
 // GetNameTaskOpenProject conectando a api do open project e pegando o nome da task
 func GetNameTaskOpenProject() {
-	result := GetJSON("/api/v3/work_packages/" + IDTask)
-	TaskName = IDTask + "-" + strings.ReplaceAll(result["subject"].(string), " ", "-")
+	result := GetJSON("/work_packages/" + IDTask)
+	TaskName = strings.ToLower(IDTask + "_" + strings.ReplaceAll(result["subject"].(string), " ", "-"))
+	setDataCache("TaskName", TaskName)
+}
+
+// SaveTimeTask save the time task
+func SaveTimeTask() {
+	hs, ms, _ := calcTimer()
+	conversionTimer := hs + ms/60
+
+	jsonString := `
+	{
+		"_links":
+		{
+			"workPackage":
+			{
+				"href": "/api/v3/work_packages/{{.IDTask}}"
+			}
+		},
+		"hours": "PT{{.ConversionTimer}}H",
+		"spentOn": "{{.Time}}"
+	}`
+
+	vars := make(map[string]interface{})
+	vars["IDTask"] = IDTask
+	vars["ConversionTimer"] = float64(int(conversionTimer*100)) / 100
+	vars["Time"] = time.Now().Format("2006-01-02")
+
+	// process a template string
+	tempatestring := processString(jsonString, vars)
+	PostJSON("/time_entries", tempatestring)
+
+	// clear cache start and end time
+	setDataCache("initTime", "nil")
+	setDataCache("endTime", "nil")
 }
 
 // # ------------------------------
@@ -211,12 +230,86 @@ func GetNameTaskOpenProject() {
 // # Utils
 // #
 // # ------------------------------
+func processString(str string, vars interface{}) string {
+	tmpl, err := template.New("tmpl").Parse(str)
+
+	if err != nil {
+		panic(err)
+	}
+	return process(tmpl, vars)
+}
+
+// process applies the data structure 'vars' onto an already
+// parsed template 't', and returns the resulting string.
+func process(t *template.Template, vars interface{}) string {
+	var tmplBytes bytes.Buffer
+
+	err := t.Execute(&tmplBytes, vars)
+	if err != nil {
+		panic(err)
+	}
+	return tmplBytes.String()
+}
 
 // prepare login auth
 func basicAuth() string {
 	auth := "apikey" + ":" + token
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
+
+// set data cache save in file temp
+func setDataCache(key string, data string) {
+	dat, _ := ioutil.ReadFile("/tmp/avia")
+	newdata := key + ":" + data
+	var errWriter error
+	var exists bool = false
+	arr := strings.Split(string(dat), ":")
+
+	for i, field := range arr {
+		if field == key {
+			arr[i+1] = data
+			exists = true
+		}
+	}
+
+	if exists {
+		errWriter = ioutil.WriteFile("/tmp/avia", []byte(strings.Join(arr, ":")), 0644)
+	} else {
+		errWriter = ioutil.WriteFile("/tmp/avia", []byte(strings.Join(arr, ":")+":"+newdata), 0644)
+	}
+
+	if errWriter != nil {
+		panic(errWriter)
+	}
+}
+
+// get data cache save in file temp
+func getDataCache(key string) string {
+	dat, err := ioutil.ReadFile("/tmp/avia")
+	if err != nil {
+		return ""
+	}
+
+	arr := strings.Split(string(dat), ":")
+	for i, field := range arr {
+		if field == key {
+			return arr[i+1]
+		}
+	}
+
+	return ""
+}
+
+// clear the terminal
+func clearTerminal() {
+	os.Stdout.WriteString("\x1b[3;J\x1b[H\x1b[2J")
+}
+
+// # ------------------------------
+// #
+// # Requests
+// #
+// # ------------------------------
 
 // GetJSON pega os json e reoassa para quem pedir
 func GetJSON(url string) (result map[string]interface{}) {
@@ -238,7 +331,41 @@ func GetJSON(url string) (result map[string]interface{}) {
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode == http.StatusInternalServerError {
-		fmt.Println(resp.Status)
+		fmt.Println("erropr", resp.Status)
+		os.Exit(1)
+	}
+
+	jsonErr := json.Unmarshal(respBody, &result)
+
+	if jsonErr != nil {
+		fmt.Println(string(respBody))
+		log.Fatal(jsonErr)
+	}
+
+	return
+}
+
+// PostJSON pega os json e reoassa para quem pedir
+func PostJSON(url string, jsonStr string) (result map[string]interface{}) {
+	// json data
+	client := &http.Client{}
+
+	req, _ := http.NewRequest("POST", baseAPI+url, bytes.NewBuffer([]byte(jsonStr)))
+	req.Header.Add("Authorization", basicAuth())
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println("Errored when sending request to the server")
+		return
+	}
+
+	defer resp.Body.Close()
+	respBody, _ := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode == http.StatusInternalServerError {
+		fmt.Println("Error aqui ", resp.Status)
 		os.Exit(1)
 	}
 
