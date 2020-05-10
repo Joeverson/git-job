@@ -1,6 +1,6 @@
 # AVIA
 
-A - 
+A
 V
 I
 A
@@ -9,8 +9,6 @@ The script for easy create and update new branches with base the main branch.
 
 # Minimum requirements 
 - [GIT](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [jq](https://stedolan.github.io/jq/download/)
-- [curl](https://curl.haxx.se)
 
 ## Install Linux
 
@@ -20,13 +18,12 @@ call for ```$ avia```, done!
 
 ## Install Windows
 
-[install choco](https://chocolatey.org/install)
 
-`choco install jq`
+copy 'avia' on anywhere directory,above open the terminal(shell) and
+call for ```$ avia```, done!
 
-### Copy the envoriments
+### Copy/Create the environment
 
-##### Linux
 ```
 export TOKEN=<token-open-project>
 export BRANCH_UPLEVEL=<branch-default-development>
@@ -34,29 +31,12 @@ export SERVER_OP=<ip-open-project>
 export PROJECT_ID=<id-project>
 ```
 
-##### Windows
-
-Open Environment Variable and add the settings below.
-```
-TOKEN=<token-open-project>
-BRANCH_UPLEVEL=<branch-default-development>
-SERVER_OP=<ip-open-project>
-PROJECT_ID=<id-project>
-```
-
 ## Runner
-
-##### Linux
 
 Copy the application for ./bin or choose one local, after call the command in terminal into in your project with git:
 
-```avia <task> <branch-choose>```
+```avia <id_task> [branch-default]```
 
-##### Windows
-
-Choose any local, after call the command in terminal into in your project with git:
-
-```./avia.sh <task> <branch-choose>```
 ## commands
 
 For more informations
@@ -67,12 +47,10 @@ $ avia --help
 
 # Timer
 
-quando tiver começado a atividade, pode-se adicionar pausa ou continuar o tempo da mesma clicando 'p' para pausar e 'c' para constinuar. caso tenha finalizado só precionar 'd', assim ele fecha a branch e adiciona o tempo no open project
+When task start, you can add pause, resume oor stop the timer, so 
+call the command 
+```
+$ avia [--pause || p] [--resume || r] [--stop || s]
+```
+When stop timer your spend time is saved in open project.
 
-## TO-DO
-
-- adicionar horas trabalhadas
-  - [x] dicionar tbm pausa, tipo indo para o banheiro.. poderia ver tbm quando esta em lock ele colocaria pausa e se saisse ele tiraria a pausa
-  - [x] quando finalizar a task ele salva no OP as informações das horas trabalhadas e tals
-  - [x] fazer um facilitador para instalar e adicionar as informações como token e nome do projeto, podemos fazer no .zshrc/.bashrc e o carinha pega dela as informações de token e tals
-  - criar fluxograma de como ele deve funcionar para mostrar a professora e presentar no meetup
