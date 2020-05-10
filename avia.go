@@ -48,6 +48,8 @@ func main() {
 			timer(false)
 		case "--time", "t":
 			seeTimer()
+		case "--projects", "pp":
+			seeProjects()
 		default:
 			_, err := strconv.ParseInt(command, 10, 0)
 
@@ -99,6 +101,8 @@ func help() {
 	fmt.Println("\t$ avia --resume ou r")
 	fmt.Println("- Finalizando o timer da task")
 	fmt.Println("\t$ avia --stop ou s")
+	fmt.Println("- Visualizando os projetos e Ids de que você faz parte")
+	fmt.Println("\t$ avia --projects ou pp")
 }
 
 // # ------------------------------
@@ -191,6 +195,16 @@ func GetNameTaskOpenProject() {
 	result := GetJSON("/work_packages/" + IDTask)
 	TaskName = strings.ToLower(IDTask + "_" + strings.ReplaceAll(result["subject"].(string), " ", "-"))
 	setDataCache("TaskName", TaskName)
+}
+
+// see my projects
+func seeProjects() {
+	result := GetJSON("/projects")
+	v := result["_embedded"].(map[string]interface{})
+	for _, data := range v["elements"].([]interface{}) {
+		datac := data.(map[string]interface{})
+		fmt.Println("ID: ", datac["id"], " Project Name: ", datac["name"])
+	}
 }
 
 // SaveTimeTask save the time task
