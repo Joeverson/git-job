@@ -12,15 +12,11 @@ The script for easy create and update new branches with base the main branch.
 
 ## Install Linux
 
+to install copy the code in terminal
 
-copy 'avia' the script in your directory '/bin', above open the terminal(shell) and
-call for ```$ avia```, done!
-
-## Install Windows
-
-
-copy 'avia' on anywhere directory,above open the terminal(shell) and
-call for ```$ avia```, done!
+```
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
 
 ### Copy/Create the environment
 
