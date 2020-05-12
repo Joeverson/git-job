@@ -43,10 +43,14 @@ $ avia --help
 
 # Timer
 
-When task start, you can add pause, resume oor stop the timer, so 
-call the command 
+When task start, you can add pause, resume oor stop the timer, so call the command.
 ```
 $ avia [--pause || p] [--resume || r] [--stop || s]
 ```
 When stop timer your spend time is saved in open project.
 
+# How get token in Open Project
+
+is simple, see the gif:
+
+![image](./images/get-token.gif)
