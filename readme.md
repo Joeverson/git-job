@@ -15,7 +15,7 @@ The script for easy create and update new branches with base the main branch.
 to install copy the code in terminal
 
 ```
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sh -c "$(curl -fsSL https://github.com/Joeverson/git-job/blob/master/tools/install.sh)"
 ```
 
 ### Copy/Create the environment
