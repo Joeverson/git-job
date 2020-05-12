@@ -50,6 +50,8 @@ func main() {
 			seeTimer()
 		case "--projects", "pp":
 			seeProjects()
+		case "--clear", "c":
+			clearDataCache()
 		default:
 			_, err := strconv.ParseInt(command, 10, 0)
 
@@ -72,7 +74,7 @@ func main() {
 					fmt.Println("Fail connect the server Open Project, see the settings")
 				}
 			} else {
-				fmt.Println("Invalid command, about more know: 'avia --help'")
+				fmt.Println("Invalid command, about more: 'avia --help'")
 			}
 
 		}
@@ -103,6 +105,8 @@ func help() {
 	fmt.Println("\t$ avia --stop ou s")
 	fmt.Println("- Visualizando os projetos e Ids de que você faz parte")
 	fmt.Println("\t$ avia --projects ou pp")
+	fmt.Println("- Limpando a memoria do app")
+	fmt.Println("\t$ avia --clear ou c")
 }
 
 // # ------------------------------
@@ -297,6 +301,15 @@ func setDataCache(key string, data string) {
 	}
 }
 
+// clear storage
+func clearDataCache() {
+	errWriter := ioutil.WriteFile("/tmp/avia", []byte(""), 0644)
+
+	if errWriter != nil {
+		panic(errWriter)
+	}
+}
+
 // get data cache save in file temp
 func getDataCache(key string) string {
 	dat, err := ioutil.ReadFile("/tmp/avia")
@@ -345,7 +358,7 @@ func GetJSON(url string) (result map[string]interface{}) {
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode == http.StatusInternalServerError {
-		fmt.Println("erropr", resp.Status)
+		fmt.Println("error", resp.Status)
 		os.Exit(1)
 	}
 
