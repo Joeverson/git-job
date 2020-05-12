@@ -2,7 +2,7 @@
 
 ALIAS="alias avia=/etc/avia/binary"
 sudo mkdir /etc/avia
-sudo curl https://github.com/Joeverson/git-job/releases/download/0.0.1/binary --output /etc/avia/binary --silent || {
+sudo curl -fsSL https://github.com/Joeverson/git-job/releases/download/0.0.1/binary --output /etc/avia/binary --silent || {
     echo "Error in download application"
     exit 1
 }
